@@ -1,0 +1,96 @@
+.upload-form-container {
+  max-width: 700px;
+  margin: 50px auto;
+  padding: 32px;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0px 6px 18px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  transition: transform 0.2s ease;
+}
+
+/* .upload-form-container:hover {
+  transform: translateY(-3px);
+} */
+
+.upload-form-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.vit-logo {
+  width: 150px;
+  margin-bottom: 8px;
+}
+
+.upload-form-title {
+  font-size: 26px;
+  font-weight: 700;
+  color: #004aad;
+}
+
+.upload-form-instruction {
+  margin-bottom: 20px;
+  font-size: 15px;
+  color: #555;
+}
+
+.upload-file-input {
+  display: block;
+  margin: 0 auto 12px;
+  cursor: pointer;
+  padding: 10px;
+  border: 2px dashed #004aad;
+  border-radius: 8px;
+  transition: border-color 0.3s ease;
+}
+
+/* .upload-file-input:hover {
+  border-color: #f26b38;
+} */
+
+.upload-selected-file {
+  margin: 10px 0;
+  font-size: 14px;
+  color: #2e7d32;
+  font-weight: 600;
+}
+
+.upload-error-message {
+  color: #d32f2f;
+  margin-bottom: 16px;
+  font-weight: 600;
+}
+
+.upload-submit-button {
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+  background: #004aad;
+  /* background: linear-gradient(135deg, #004aad, #f26b38); */
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.3s ease, transform 0.2s ease;
+}
+
+.upload-submit-button:hover:not(:disabled) {
+  /* background: linear-gradient(135deg, #003a8c, #e85a28); */
+  transform: scale(1.03);
+}
+
+.upload-submit-button:disabled {
+  background: #9e9e9e;
+  cursor: not-allowed;
+}
+
+.upload-form-footer {
+  margin-top: 20px;
+  font-size: 13px;
+  color: #777;
+  user-select: none;
+}
