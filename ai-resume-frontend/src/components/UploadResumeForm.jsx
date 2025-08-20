@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import "./UploadResumeForm.css";
-import logo from "./vishwakarma_logo.png"; // ✅ Place logo in src/ folder
+import logo from "../assets/vishwakarma_logo.png";
 
 function UploadResumeForm({ onUploadSuccess }) {
   const [file, setFile] = useState(null);
