@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import UploadResumeForm from "./components/UploadResumeForm";
-import SectionCard from "./components/SectionCard";
+import ResumeAnalysisResults from "./components/ResumeAnalysisResults";
 
 function App() {
   const [analysisData, setAnalysisData] = useState(null);
@@ -9,21 +9,40 @@ function App() {
     setAnalysisData(data);
   };
 
+  const handleReset = () => {
+    setAnalysisData(null);
+  };
+
   return (
-    <div style={{ padding: "20px", maxWidth: "900px", margin: "0 auto" }}>
+    <div style={{ minHeight: "100vh", backgroundColor: "#f8f9fa" }}>
       {!analysisData ? (
-        <UploadResumeForm onUploadSuccess={handleUploadSuccess} />
+        <div style={{ padding: "20px", maxWidth: "900px", margin: "0 auto" }}>
+          <UploadResumeForm onUploadSuccess={handleUploadSuccess} />
+        </div>
       ) : (
-        analysisData.sections.map((section, index) => (
-          <SectionCard
-            key={index}
-            title={section.title}
-            contentObj={section.content}
-            qualityScore={section.qualityScore}
-            suggestions={section.suggestions}
-            isLast={index === analysisData.sections.length - 1}
-          />
-        ))
+        <div style={{ padding: "20px" }}>
+          <div style={{ maxWidth: "900px", margin: "0 auto", marginBottom: "20px" }}>
+            <button
+              onClick={handleReset}
+              style={{
+                backgroundColor: "#6c757d",
+                color: "white",
+                border: "none",
+                padding: "10px 20px",
+                borderRadius: "8px",
+                cursor: "pointer",
+                fontSize: "14px",
+                fontWeight: "500",
+                transition: "background-color 0.2s",
+              }}
+              onMouseOver={(e) => e.target.style.backgroundColor = "#5a6268"}
+              onMouseOut={(e) => e.target.style.backgroundColor = "#6c757d"}
+            >
+              ← Upload New Resume
+            </button>
+          </div>
+          <ResumeAnalysisResults analysisData={analysisData} />
+        </div>
       )}
     </div>
   );

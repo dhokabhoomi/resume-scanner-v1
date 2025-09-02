@@ -41,21 +41,20 @@ async def analyze_resume_endpoint(file: UploadFile = File(...)):
         if not extracted_text:
             raise HTTPException(status_code=500, detail="Failed to extract text from PDF")
 
-        # Get AI analysis string from Gemini
-        analysis_raw = analyze_resume(extracted_text)
+        # Get AI analysis dict from Gemini
+        analysis_result = analyze_resume(extracted_text)
 
-        # Parse cleaned JSON string into dict
-        try:
-            analysis = json.loads(analysis_raw)
-        except Exception:
-            analysis = {
-                "error": "Invalid JSON from AI",
-                "raw_output": analysis_raw
+        # Check if there's an error in the analysis
+        if "error" in analysis_result:
+            return {
+                "status": "error",
+                "analysis": analysis_result,
+                "extracted_text_preview": extracted_text[:500],
             }
 
         return {
             "status": "success",
-            "analysis": analysis,
+            "analysis": analysis_result.get("analysis", analysis_result),
             "extracted_text_preview": extracted_text[:500],
         }
 

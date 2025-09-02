@@ -64,9 +64,9 @@ def clean_json_response(raw_text: str) -> dict:
         return {"error": "Failed to parse analysis results", "raw_response": raw_text[:500] + "..."}
 
 
-def analyze_resume(resume_text: str) -> str:
+def analyze_resume(resume_text: str) -> dict:
     if not resume_text:
-        return '{"error": "Empty resume text"}'
+        return {"error": "Empty resume text"}
 
     base_prompt = f"""
 You are an expert resume evaluator capable of analyzing resumes across ALL industries and domains. Your task is to scan the resume text and provide comprehensive feedback. Return ONLY valid JSON in the exact structure below.
@@ -194,7 +194,8 @@ Input Resume Text:
     try:
         response = model.generate_content(base_prompt)
         raw_text = response.text.strip()
-        return raw_text
+        cleaned = clean_json_response(raw_text)
+        return {"status": "success", "analysis": cleaned}
     except Exception as e:
         print(f"Error in AI analysis: {e}")
-        return f'{{"error": "Analysis failed: {str(e)}"}}'
+        return {"error": f"Analysis failed: {str(e)}"}

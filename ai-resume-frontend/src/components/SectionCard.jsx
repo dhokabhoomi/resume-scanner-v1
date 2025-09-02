@@ -120,7 +120,7 @@ const SectionCard = ({
       {isOpen && (
         <div style={{ padding: "20px" }}>
           {/* Main extracted content */}
-          {contentObj && (
+          {contentObj && Object.keys(contentObj).length > 0 && (
             <div style={{ marginBottom: "16px" }}>
               <h3
                 style={{
@@ -129,7 +129,7 @@ const SectionCard = ({
                   color: "#4a5568",
                 }}
               >
-                Content:
+                Analysis Details:
               </h3>
               <div
                 style={{
@@ -141,6 +141,18 @@ const SectionCard = ({
               >
                 {renderContent(contentObj)}
               </div>
+            </div>
+          )}
+
+          {/* Show message if no content and no suggestions */}
+          {(!contentObj || Object.keys(contentObj).length === 0) && !suggestions && (
+            <div style={{ 
+              textAlign: "center", 
+              color: "#6c757d", 
+              fontStyle: "italic",
+              padding: "20px 0"
+            }}>
+              No analysis data available for this section
             </div>
           )}
 

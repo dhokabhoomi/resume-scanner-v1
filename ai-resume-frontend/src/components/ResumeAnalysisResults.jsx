@@ -13,78 +13,96 @@ const ResumeAnalysisResults = ({ analysisData }) => {
     );
   }
 
-  // Check if there's an error in the analysis
-  if (analysisData.error) {
+  // Check if there's an error in the analysis response
+  if (analysisData.status === "error" || analysisData.analysis?.error) {
     return (
-      <div style={{ textAlign: "center", padding: "40px", color: "#dc3545" }}>
+      <div style={{ textAlign: "center", padding: "40px", color: "#dc3545", backgroundColor: "white", borderRadius: "12px", border: "1px solid #f5c2c7" }}>
         <div style={{ fontSize: "48px", marginBottom: "16px" }}>⚠️</div>
         <h3>Analysis Error</h3>
-        <p>{analysisData.error}</p>
+        <p>{analysisData.analysis?.error || "An error occurred during analysis"}</p>
+        {analysisData.analysis?.raw_output && (
+          <details style={{ marginTop: "16px", textAlign: "left" }}>
+            <summary style={{ cursor: "pointer", color: "#6c757d" }}>Show raw output</summary>
+            <pre style={{ fontSize: "12px", backgroundColor: "#f8f9fa", padding: "10px", borderRadius: "4px", overflow: "auto" }}>
+              {analysisData.analysis.raw_output}
+            </pre>
+          </details>
+        )}
       </div>
     );
   }
+
+  // Get the analysis object from the response
+  const analysis = analysisData.analysis;
 
   // Extract sections from the analysis data
   const sections = [
     {
       title: "Basic Information",
-      contentObj: analysisData.basic_info_content || {},
-      qualityScore: analysisData.basic_info?.quality_score,
-      suggestions: analysisData.basic_info?.suggestions,
+      contentObj: {},
+      qualityScore: analysis.basic_info?.quality_score,
+      suggestions: analysis.basic_info?.suggestions,
     },
     {
       title: "Professional Summary",
-      contentObj: analysisData.summary_content || {},
-      qualityScore: analysisData.professional_summary?.quality_score,
-      suggestions: analysisData.professional_summary?.suggestions,
+      contentObj: {},
+      qualityScore: analysis.professional_summary?.quality_score,
+      suggestions: analysis.professional_summary?.suggestions,
     },
     {
       title: "Education",
-      contentObj: analysisData.education_content || {},
-      qualityScore: analysisData.education?.quality_score,
-      suggestions: analysisData.education?.suggestions,
+      contentObj: {},
+      qualityScore: analysis.education?.quality_score,
+      suggestions: analysis.education?.suggestions,
     },
     {
       title: "Work Experience",
-      contentObj: analysisData.experience_content || {},
-      qualityScore: analysisData.work_experience?.quality_score,
-      suggestions: analysisData.work_experience?.suggestions,
+      contentObj: {},
+      qualityScore: analysis.work_experience?.quality_score,
+      suggestions: analysis.work_experience?.suggestions,
     },
     {
       title: "Skills",
-      contentObj: analysisData.skills_content || {},
-      qualityScore: analysisData.skills?.quality_score,
-      suggestions: analysisData.skills?.suggestions,
+      contentObj: {},
+      qualityScore: analysis.skills?.quality_score,
+      suggestions: analysis.skills?.suggestions,
     },
     {
       title: "Projects",
-      contentObj: analysisData.projects_content || {},
-      qualityScore: analysisData.projects?.quality_score,
-      suggestions: analysisData.projects?.suggestions,
+      contentObj: {},
+      qualityScore: analysis.projects?.quality_score,
+      suggestions: analysis.projects?.suggestions,
     },
     {
       title: "Certifications",
-      contentObj: analysisData.certifications_content || {},
-      qualityScore: analysisData.certifications?.quality_score,
-      suggestions: analysisData.certifications?.suggestions,
+      contentObj: {},
+      qualityScore: analysis.certifications?.quality_score,
+      suggestions: analysis.certifications?.suggestions,
     },
     {
       title: "Extracurricular Activities",
-      contentObj: analysisData.extracurriculars_content || {},
-      qualityScore: analysisData.extracurriculars?.quality_score,
-      suggestions: analysisData.extracurriculars?.suggestions,
+      contentObj: {},
+      qualityScore: analysis.extracurriculars?.quality_score,
+      suggestions: analysis.extracurriculars?.suggestions,
     },
     {
       title: "Links Found",
-      contentObj: analysisData.links_found || {},
-      suggestions: analysisData.links_found?.link_suggestions,
+      contentObj: analysis.links_found || {},
+      suggestions: analysis.links_found?.link_suggestions,
     },
     {
       title: "Formatting Issues",
-      contentObj: analysisData.formatting_issues || {},
-      suggestions: analysisData.formatting_issues?.other_formatting_issues,
+      contentObj: analysis.formatting_issues || {},
+      suggestions: analysis.formatting_issues?.other_formatting_issues,
     },
   ];
+
+  // Filter out sections that don't have meaningful data
+  const validSections = sections.filter(section => 
+    section.qualityScore !== undefined || 
+    section.suggestions || 
+    (section.contentObj && Object.keys(section.contentObj).length > 0)
+  );
 
   return (
     <div style={{ maxWidth: "800px", margin: "0 auto", padding: "20px" }}>
@@ -114,9 +132,9 @@ const ResumeAnalysisResults = ({ analysisData }) => {
             marginBottom: "12px",
           }}
         >
-          Overall Score: {analysisData.overall_score || 0}%
+          Overall Score: {analysis.overall_score || 0}%
         </div>
-        {analysisData.overall_suggestions && (
+        {analysis.overall_suggestions && (
           <div
             style={{
               marginTop: "16px",
@@ -131,22 +149,52 @@ const ResumeAnalysisResults = ({ analysisData }) => {
               Overall Suggestions
             </h3>
             <p style={{ margin: 0, lineHeight: "1.5" }}>
-              {analysisData.overall_suggestions}
+              {analysis.overall_suggestions}
             </p>
+          </div>
+        )}
+        
+        {/* Display extracted text preview if available */}
+        {analysisData.extracted_text_preview && (
+          <div
+            style={{
+              marginTop: "16px",
+              padding: "16px",
+              backgroundColor: "#f8f9fa",
+              border: "1px solid #dee2e6",
+              borderRadius: "8px",
+              textAlign: "left",
+            }}
+          >
+            <h3 style={{ margin: "0 0 8px 0", color: "#495057" }}>
+              Extracted Text Preview
+            </h3>
+            <pre style={{ 
+              margin: 0, 
+              lineHeight: "1.4", 
+              fontSize: "12px", 
+              whiteSpace: "pre-wrap",
+              wordBreak: "break-word",
+              maxHeight: "150px",
+              overflow: "auto",
+              fontFamily: "Monaco, 'Courier New', monospace"
+            }}>
+              {analysisData.extracted_text_preview}
+            </pre>
           </div>
         )}
       </div>
 
       {/* Sections */}
       <div>
-        {sections.map((section, index) => (
+        {validSections.map((section, index) => (
           <SectionCard
             key={index}
             title={section.title}
             contentObj={section.contentObj}
             qualityScore={section.qualityScore}
             suggestions={section.suggestions}
-            isLast={index === sections.length - 1}
+            isLast={index === validSections.length - 1}
           />
         ))}
       </div>
