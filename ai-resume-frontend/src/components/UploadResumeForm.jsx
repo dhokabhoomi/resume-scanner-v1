@@ -1,3 +1,4 @@
+// UploadResumeForm.jsx
 import React, { useState, useCallback } from "react";
 import "./UploadResumeForm.css";
 import logo from "../assets/vishwakarma_logo.png";
@@ -15,6 +16,14 @@ function UploadResumeForm({ onUploadSuccess }) {
       setFile(null);
       return;
     }
+
+    // Check file size (5MB max)
+    if (selectedFile && selectedFile.size > 5 * 1024 * 1024) {
+      setError("File size exceeds 5MB limit.");
+      setFile(null);
+      return;
+    }
+
     setFile(selectedFile);
   };
 
@@ -32,7 +41,6 @@ function UploadResumeForm({ onUploadSuccess }) {
 
   const handleDragLeave = useCallback((e) => {
     e.preventDefault();
-    // Only set dragging to false if leaving the drop zone entirely
     if (e.currentTarget.contains(e.relatedTarget)) return;
     setIsDragging(false);
   }, []);
@@ -41,9 +49,9 @@ function UploadResumeForm({ onUploadSuccess }) {
     e.preventDefault();
     setIsDragging(false);
 
-    const droppedFile = e.dataTransfer.files[0];
-    if (droppedFile) {
-      handleFileChange(droppedFile);
+    const droppedFiles = e.dataTransfer.files;
+    if (droppedFiles.length > 0) {
+      handleFileChange(droppedFiles[0]);
     }
   }, []);
 
@@ -65,14 +73,20 @@ function UploadResumeForm({ onUploadSuccess }) {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || "Upload failed");
+        const errorText = await response.text();
+        throw new Error(errorText || "Upload failed");
       }
 
       const result = await response.json();
+
+      // Check if the response contains an error
+      if (result.error) {
+        throw new Error(result.error);
+      }
+
       onUploadSuccess(result);
     } catch (err) {
-      setError(err.message);
+      setError(err.message || "An error occurred during analysis");
     } finally {
       setUploading(false);
     }
@@ -82,8 +96,8 @@ function UploadResumeForm({ onUploadSuccess }) {
     <form onSubmit={handleSubmit} className="upload-form-container">
       {/* Logo Header */}
       <div className="upload-form-header">
-        <img src={logo} alt="VIT Logo" className="vit-logo" />
-        <h2 className="upload-form-title">VIT Resume Analyzer</h2>
+        <img src={logo} alt="VU Logo" className="vu-logo" />
+        <h2 className="upload-form-title">VU Resume Analyzer</h2>
       </div>
 
       <p className="upload-form-instruction">

@@ -59,6 +59,11 @@ async def analyze_resume_endpoint(file: UploadFile = File(...)):
             "extracted_text_preview": extracted_text[:500],
         }
 
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
     finally:
         if tmp_pdf_path and os.path.exists(tmp_pdf_path):
             os.remove(tmp_pdf_path)
+            
