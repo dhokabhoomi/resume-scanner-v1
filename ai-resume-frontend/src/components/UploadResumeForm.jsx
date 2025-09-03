@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from "react";
 import "./UploadResumeForm.css";
 import logo from "../assets/vishwakarma_logo.png";
+import { API_ENDPOINTS } from "../config/api";
 
 function UploadResumeForm({ onUploadSuccess }) {
   const [file, setFile] = useState(null);
@@ -60,7 +61,7 @@ function UploadResumeForm({ onUploadSuccess }) {
     formData.append("file", file);
 
     try {
-      const response = await fetch("http://localhost:8000/analyze_resume", {
+      const response = await fetch(API_ENDPOINTS.ANALYZE_RESUME, {
         method: "POST",
         body: formData,
       });
