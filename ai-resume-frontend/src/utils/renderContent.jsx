@@ -1,35 +1,51 @@
-export function renderContent(content) {
+// renderContent.js
+import React from "react";
+import "./renderContent.css";
+
+export function renderContent(content, depth = 0, maxDepth = 5) {
   if (!content) return <i>No content available.</i>;
 
-  // Array → render as bullet list
+  // Prevent infinite recursion
+  if (depth > maxDepth) return <span>Content too nested</span>;
+
+  // Array → bullet list
   if (Array.isArray(content)) {
     return (
-      <ul style={{ paddingLeft: "20px", margin: "6px 0" }}>
+      <ul className="rc-list">
         {content.map((item, idx) => (
-          <li key={idx} style={{ marginBottom: "4px" }}>
-            {renderContent(item)}
-          </li>
+          <li key={idx}>{renderContent(item, depth + 1, maxDepth)}</li>
         ))}
       </ul>
     );
   }
 
-  // Object → render as definition list (cleaner than divs)
+  // Object → definition-style block
   if (typeof content === "object") {
+    const filteredEntries = Object.entries(content).filter(
+      ([key]) => !["quality_score", "suggestions"].includes(key)
+    );
+
+    if (filteredEntries.length === 0) {
+      return <i>No content details available.</i>;
+    }
+
     return (
-      <dl style={{ margin: "8px 0" }}>
-        {Object.entries(content).map(([key, value]) => (
-          <div key={key} style={{ marginBottom: "6px" }}>
-            <strong style={{ textTransform: "capitalize" }}>
-              {key.replace(/_/g, " ")}:{" "}
-            </strong>
-            {renderContent(value)}
+      <dl className="rc-definition">
+        {filteredEntries.map(([key, value]) => (
+          <div key={key} className="rc-definition-item">
+            <strong className="rc-key">{key.replace(/_/g, " ")}:</strong>
+            {renderContent(value, depth + 1, maxDepth)}
           </div>
         ))}
       </dl>
     );
   }
 
-  // String / number → plain span
-  return <span>{String(content)}</span>;
+  // Boolean → Yes/No
+  if (typeof content === "boolean") {
+    return <span>{content ? "Yes" : "No"}</span>;
+  }
+
+  // String / Number → plain text
+  return <span className="rc-text">{String(content)}</span>;
 }
