@@ -1,15 +1,14 @@
 // SectionCard.jsx
-import React, { useState } from "react";
+import React from "react";
+import "./SectionCard.css";
 
 const SectionCard = ({
   title,
   contentObj,
   qualityScore,
   suggestions,
-  isLast = false,
+  icon,
 }) => {
-  const [isOpen, setIsOpen] = useState(true);
-
   // Calculate score color based on value
   const getScoreColor = (score) => {
     if (score >= 90) return "#4caf50";
@@ -26,9 +25,9 @@ const SectionCard = ({
     // Array → render as bullet list
     if (Array.isArray(content)) {
       return (
-        <ul style={{ paddingLeft: "20px", margin: "6px 0" }}>
+        <ul className="content-list">
           {content.map((item, idx) => (
-            <li key={idx} style={{ marginBottom: "4px" }}>
+            <li key={idx} className="content-list-item">
               {renderContent(item)}
             </li>
           ))}
@@ -39,10 +38,10 @@ const SectionCard = ({
     // Object → render as definition list
     if (typeof content === "object") {
       return (
-        <dl style={{ margin: "8px 0" }}>
+        <dl className="content-dl">
           {Object.entries(content).map(([key, value]) => (
-            <div key={key} style={{ marginBottom: "6px" }}>
-              <strong style={{ textTransform: "capitalize" }}>
+            <div key={key} className="content-dl-item">
+              <strong className="content-dl-key">
                 {key.replace(/_/g, " ")}:{" "}
               </strong>
               {renderContent(value)}
@@ -61,149 +60,91 @@ const SectionCard = ({
     return <span>{String(content)}</span>;
   };
 
+  // Process suggestions to avoid duplicates
+  const processSuggestions = (suggestions) => {
+    if (!suggestions) return null;
+
+    // If it's an array, remove duplicates
+    if (Array.isArray(suggestions)) {
+      const uniqueSuggestions = [...new Set(suggestions)];
+      return uniqueSuggestions;
+    }
+
+    // If it's a string, split into sentences and remove duplicates
+    if (typeof suggestions === "string") {
+      const sentences = suggestions
+        .split(/(?<=[.!?])\s+/)
+        .map((s) => s.trim())
+        .filter((s) => s);
+      const uniqueSentences = [...new Set(sentences)];
+      return uniqueSentences;
+    }
+
+    return suggestions;
+  };
+
+  const processedSuggestions = processSuggestions(suggestions);
+
   return (
-    <div
-      style={{
-        border: "1px solid #e0e0e0",
-        borderRadius: "12px",
-        marginBottom: isLast ? "0" : "16px",
-        backgroundColor: "#fff",
-        boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
-        overflow: "hidden",
-        transition: "all 0.3s ease",
-      }}
-    >
+    <div className="section-card">
       {/* Title Bar */}
-      <div
-        style={{
-          padding: "16px 20px",
-          cursor: "pointer",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          background: "#f9f9f9",
-          borderBottom: isOpen ? "1px solid #eee" : "none",
-        }}
-        onClick={() => setIsOpen(!isOpen)}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <h2
-            style={{
-              fontSize: "17px",
-              fontWeight: "600",
-              margin: 0,
-              color: "#2d3748",
-            }}
-          >
-            {title}
-          </h2>
+      <div className="section-card-header">
+        <div className="section-card-title-container">
+          <div className="section-card-title-wrapper">
+            {icon && <span className="section-card-icon">{icon}</span>}
+            <h2 className="section-card-title">{title}</h2>
+          </div>
           {qualityScore !== undefined && (
             <div
-              style={{
-                backgroundColor: getScoreColor(qualityScore),
-                color: "white",
-                padding: "4px 10px",
-                borderRadius: "20px",
-                fontSize: "13px",
-                fontWeight: "600",
-              }}
+              className="section-card-score"
+              style={{ backgroundColor: getScoreColor(qualityScore) }}
             >
               {qualityScore}%
             </div>
           )}
         </div>
-        <span style={{ fontSize: "14px", color: "#666" }}>
-          {isOpen ? "▲" : "▼"}
-        </span>
       </div>
 
-      {isOpen && (
-        <div style={{ padding: "20px" }}>
-          {/* Main extracted content */}
-          {contentObj && Object.keys(contentObj).length > 0 && (
-            <div style={{ marginBottom: "16px" }}>
-              <h3
-                style={{
-                  fontSize: "15px",
-                  margin: "0 0 10px 0",
-                  color: "#4a5568",
-                }}
-              >
-                Analysis Details:
-              </h3>
-              <div
-                style={{
-                  backgroundColor: "#f8f9fa",
-                  padding: "12px 16px",
-                  borderRadius: "8px",
-                  border: "1px solid #e9ecef",
-                }}
-              >
-                {renderContent(contentObj)}
-              </div>
+      <div className="section-card-content">
+        {/* Main extracted content */}
+        {contentObj && Object.keys(contentObj).length > 0 && (
+          <div className="section-card-details">
+            <h3 className="section-card-subtitle">Analysis Details:</h3>
+            <div className="section-card-content-box">
+              {renderContent(contentObj)}
             </div>
-          )}
+          </div>
+        )}
 
-          {/* Show message if no content and no suggestions */}
-          {(!contentObj || Object.keys(contentObj).length === 0) && !suggestions && (
-            <div style={{ 
-              textAlign: "center", 
-              color: "#6c757d", 
-              fontStyle: "italic",
-              padding: "20px 0"
-            }}>
+        {/* Show message if no content and no suggestions */}
+        {(!contentObj || Object.keys(contentObj).length === 0) &&
+          !processedSuggestions && (
+            <div className="section-card-empty">
               No analysis data available for this section
             </div>
           )}
 
-          {/* Suggestions */}
-          {suggestions && (
-            <div
-              style={{
-                marginTop: "16px",
-                padding: "16px",
-                backgroundColor: "#e8f4f8",
-                border: "1px solid #bee5eb",
-                borderRadius: "8px",
-                fontSize: "14px",
-              }}
-            >
-              <h3
-                style={{
-                  fontSize: "15px",
-                  margin: "0 0 10px 0",
-                  color: "#0c5460",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                }}
-              >
-                <span style={{ fontSize: "18px" }}>💡</span> Suggestions
-              </h3>
-              {Array.isArray(suggestions) ? (
-                <ul style={{ margin: "6px 0 0 0", paddingLeft: "20px" }}>
-                  {suggestions.map((suggestion, idx) => (
-                    <li key={idx} style={{ marginBottom: "6px" }}>
-                      {suggestion}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <div style={{ lineHeight: "1.5" }}>
-                  {suggestions.split(/(?<=[.!?])\s+/).map(
-                    (sentence, idx) =>
-                      sentence.trim() && (
-                        <div key={idx} style={{ marginBottom: "8px" }}>
-                          • {sentence.trim()}
-                        </div>
-                      )
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      )}
+        {/* Suggestions */}
+        {processedSuggestions && (
+          <div className="section-card-suggestions">
+            <h3 className="section-card-suggestions-title">
+              <span className="section-card-suggestions-icon">💡</span>{" "}
+              Suggestions
+            </h3>
+            {Array.isArray(processedSuggestions) ? (
+              <ul className="suggestions-list">
+                {processedSuggestions.map((suggestion, idx) => (
+                  <li key={idx} className="suggestions-list-item">
+                    {suggestion}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="suggestions-text">{processedSuggestions}</div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
