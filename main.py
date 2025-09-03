@@ -2,7 +2,18 @@ from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import os
 import json
+from dotenv import load_dotenv
 from pdf_processing import extract_text_from_pdf, analyze_resume
+
+# Load environment variables
+load_dotenv()
+
+# Check if API key is loaded
+api_key = os.getenv("GOOGLE_API_KEY")
+if not api_key:
+    print("WARNING: GOOGLE_API_KEY not found in environment variables!")
+else:
+    print(f"API Key loaded: {api_key[:10]}..." if len(api_key) > 10 else "API Key loaded but very short")
 
 app = FastAPI(title="VU Resume Analyzer API", version="1.0.0")
 

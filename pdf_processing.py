@@ -9,8 +9,22 @@ import re
 import logging
 
 load_dotenv()
-genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
-model = genai.GenerativeModel("gemini-1.5-flash")
+
+# Configure Google AI with better error handling
+api_key = os.getenv("GOOGLE_API_KEY")
+if not api_key:
+    print("ERROR: GOOGLE_API_KEY not found in environment variables!")
+    print("Available env vars:", list(os.environ.keys())[:10])  # Show first 10 env vars for debug
+else:
+    print(f"Configuring Google AI with key: {api_key[:10]}...")
+
+try:
+    genai.configure(api_key=api_key)
+    model = genai.GenerativeModel("gemini-1.5-flash")
+    print("Google AI model configured successfully")
+except Exception as e:
+    print(f"Failed to configure Google AI: {e}")
+    model = None
 
 logging.basicConfig(level=logging.INFO)
 
@@ -88,6 +102,9 @@ def enforce_headshot_rule(analysis: dict) -> dict:
 def analyze_resume(resume_text: str, retry_on_fail: bool = True) -> dict:
     if not resume_text:
         return {"error": "Empty resume text"}
+    
+    if model is None:
+        return {"error": "Google AI model not configured. Please check GOOGLE_API_KEY environment variable."}
 
     base_prompt = f"""
 You are an expert resume evaluator capable of analyzing resumes across ALL industries and domains (tech, healthcare, finance, marketing, engineering, education, legal, etc.). You will receive resume text. Your task is to scan the resume text and provide comprehensive feedback. Return ONLY valid JSON in the exact structure below.
