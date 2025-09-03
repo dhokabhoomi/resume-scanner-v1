@@ -1,0 +1,17 @@
+{
+  "name": "resume-scanner-v1",
+  "version": "1.0.0",
+  "description": "VU Resume Analyzer - AI-powered resume analysis tool",
+  "scripts": {
+    "build": "cd ai-resume-frontend && npm install && npm run build",
+    "dev": "cd ai-resume-frontend && npm run dev",
+    "preview": "cd ai-resume-frontend && npm run preview"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dhokabhoomi/resume-scanner-v1.git"
+  },
+  "keywords": ["resume", "analyzer", "ai", "react", "python"],
+  "author": "Your Name",
+  "license": "MIT"
+}
