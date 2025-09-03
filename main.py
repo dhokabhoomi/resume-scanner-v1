@@ -32,6 +32,7 @@ origins = [
     "http://localhost:5174",
     "http://127.0.0.1:5174",
     "https://resume-scanner-v1.vercel.app",  # Your Vercel frontend
+    "*",  # Allow all origins for debugging (remove in production)
 ]
 
 app.add_middleware(

@@ -1,13 +1,23 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import "./UploadResumeForm.css";
 import logo from "../assets/vishwakarma_logo.png";
-import { API_ENDPOINTS } from "../config/api";
+import { API_ENDPOINTS, testBackendConnection } from "../config/api";
 
 function UploadResumeForm({ onUploadSuccess }) {
   const [file, setFile] = useState(null);
   const [error, setError] = useState("");
   const [uploading, setUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [backendStatus, setBackendStatus] = useState(null);
+
+  // Test backend connection on component mount
+  useEffect(() => {
+    const checkBackend = async () => {
+      const result = await testBackendConnection();
+      setBackendStatus(result);
+    };
+    checkBackend();
+  }, []);
 
   const handleFileChange = (selectedFile) => {
     setError("");
@@ -111,6 +121,17 @@ function UploadResumeForm({ onUploadSuccess }) {
           Upload your resume as a <strong>PDF</strong>. Our AI will analyze it
           and provide structured feedback to improve your chances!
         </p>
+
+        {/* Backend Status Indicator */}
+        {backendStatus && (
+          <div className={`backend-status ${backendStatus.success ? 'success' : 'error'}`}>
+            {backendStatus.success ? (
+              <span>✅ Backend connected successfully</span>
+            ) : (
+              <span>❌ Backend connection failed: {backendStatus.error}</span>
+            )}
+          </div>
+        )}
 
         {/* Drag & Drop Area */}
         <div
