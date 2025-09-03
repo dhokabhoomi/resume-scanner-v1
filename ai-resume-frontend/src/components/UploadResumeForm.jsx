@@ -61,19 +61,38 @@ function UploadResumeForm({ onUploadSuccess }) {
     formData.append("file", file);
 
     try {
+      console.log('Uploading to:', API_ENDPOINTS.ANALYZE_RESUME);
+      
       const response = await fetch(API_ENDPOINTS.ANALYZE_RESUME, {
         method: "POST",
         body: formData,
       });
 
-      if (!response.ok) throw new Error(await response.text());
+      console.log('Response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.log('Error response:', errorText);
+        throw new Error(`Upload failed: ${response.status} - ${errorText || 'Unknown error'}`);
+      }
 
       const result = await response.json();
+      console.log('Success response:', result);
+      
       if (result.error) throw new Error(result.error);
 
       onUploadSuccess(result);
     } catch (err) {
-      setError(err.message || "An error occurred during analysis");
+      console.error('Upload error:', err);
+      
+      // More detailed error messages
+      if (err.name === 'TypeError' && err.message.includes('fetch')) {
+        setError("Cannot connect to server. Please check if the backend is running.");
+      } else if (err.message.includes('CORS')) {
+        setError("CORS error: Server configuration issue.");
+      } else {
+        setError(err.message || "An error occurred during analysis");
+      }
     } finally {
       setUploading(false);
     }
