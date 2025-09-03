@@ -4,7 +4,15 @@ import os
 import json
 from pdf_processing import extract_text_from_pdf, analyze_resume
 
-app = FastAPI()
+app = FastAPI(title="VU Resume Analyzer API", version="1.0.0")
+
+@app.get("/")
+async def root():
+    return {"message": "VU Resume Analyzer API is running", "status": "healthy"}
+
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy", "service": "resume-analyzer-api"}
 
 # CORS Configuration: Add your frontend's origin here
 origins = [
@@ -12,6 +20,7 @@ origins = [
     "http://127.0.0.1:5173",
     "http://localhost:5174",
     "http://127.0.0.1:5174",
+    "https://resume-scanner-v1.vercel.app",  # Your Vercel frontend
 ]
 
 app.add_middleware(
