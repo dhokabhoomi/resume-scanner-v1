@@ -1,4 +1,3 @@
-// UploadResumeForm.jsx
 import React, { useState, useCallback } from "react";
 import "./UploadResumeForm.css";
 import logo from "../assets/vishwakarma_logo.png";
@@ -17,7 +16,6 @@ function UploadResumeForm({ onUploadSuccess }) {
       return;
     }
 
-    // Check file size (5MB max)
     if (selectedFile && selectedFile.size > 5 * 1024 * 1024) {
       setError("File size exceeds 5MB limit.");
       setFile(null);
@@ -28,10 +26,7 @@ function UploadResumeForm({ onUploadSuccess }) {
   };
 
   const handleInputChange = (e) => {
-    const selectedFile = e.target.files[0];
-    if (selectedFile) {
-      handleFileChange(selectedFile);
-    }
+    if (e.target.files[0]) handleFileChange(e.target.files[0]);
   };
 
   const handleDragOver = useCallback((e) => {
@@ -48,10 +43,8 @@ function UploadResumeForm({ onUploadSuccess }) {
   const handleDrop = useCallback((e) => {
     e.preventDefault();
     setIsDragging(false);
-
-    const droppedFiles = e.dataTransfer.files;
-    if (droppedFiles.length > 0) {
-      handleFileChange(droppedFiles[0]);
+    if (e.dataTransfer.files.length > 0) {
+      handleFileChange(e.dataTransfer.files[0]);
     }
   }, []);
 
@@ -72,17 +65,10 @@ function UploadResumeForm({ onUploadSuccess }) {
         body: formData,
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || "Upload failed");
-      }
+      if (!response.ok) throw new Error(await response.text());
 
       const result = await response.json();
-
-      // Check if the response contains an error
-      if (result.error) {
-        throw new Error(result.error);
-      }
+      if (result.error) throw new Error(result.error);
 
       onUploadSuccess(result);
     } catch (err) {
@@ -93,86 +79,91 @@ function UploadResumeForm({ onUploadSuccess }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="upload-form-container">
-      {/* Logo Header */}
-      <div className="upload-form-header">
-        <img src={logo} alt="VU Logo" className="vu-logo" />
-        <h2 className="upload-form-title">VU Resume Analyzer</h2>
-      </div>
+    <div className="form-container">
+      <form onSubmit={handleSubmit} className="upload-form-container">
+        {/* Logo Header */}
+        <div className="upload-form-header">
+          <img src={logo} alt="VU Logo" className="vu-logo" />
+          <h2 className="upload-form-title">VU Resume Analyzer</h2>
+        </div>
 
-      <p className="upload-form-instruction">
-        Upload your resume as a <strong>PDF</strong>. Our AI will analyze it and
-        provide structured feedback to improve your chances!
-      </p>
+        <p className="upload-form-instruction">
+          Upload your resume as a <strong>PDF</strong>. Our AI will analyze it
+          and provide structured feedback to improve your chances!
+        </p>
 
-      {/* Drag and Drop Area */}
-      <div
-        className={`drag-drop-area ${isDragging ? "drag-over" : ""} ${
-          file ? "has-file" : ""
-        }`}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-      >
-        <div className="drag-drop-content">
-          <div className="upload-icon">
-            {file ? "📄" : isDragging ? "⬆️" : "📁"}
+        {/* Drag & Drop Area */}
+        <div
+          className={`drag-drop-area ${isDragging ? "drag-over" : ""} ${
+            file ? "has-file" : ""
+          }`}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
+          <div className="drag-drop-content">
+            <div className="upload-icon">
+              {file ? "📄" : isDragging ? "⬆️" : "📁"}
+            </div>
+            <p className="drag-drop-text">
+              {isDragging
+                ? "Drop your resume here"
+                : file
+                ? file.name
+                : "Drag & drop your PDF resume here"}
+            </p>
+            <p className="drag-drop-subtext">
+              {file ? "File selected successfully!" : "or"}
+            </p>
+            {!file && (
+              <label htmlFor="file-input" className="browse-file-button">
+                Browse files
+              </label>
+            )}
+            <input
+              id="file-input"
+              type="file"
+              onChange={handleInputChange}
+              accept="application/pdf"
+              className="upload-file-input"
+            />
           </div>
-          <p className="drag-drop-text">
-            {isDragging
-              ? "Drop your resume here"
-              : file
-              ? file.name
-              : "Drag & drop your PDF resume here"}
-          </p>
-          <p className="drag-drop-subtext">
-            {file ? "File selected successfully!" : "or"}
-          </p>
-          {!file && (
-            <label htmlFor="file-input" className="browse-file-button">
-              Browse files
-            </label>
-          )}
-          <input
-            id="file-input"
-            type="file"
-            onChange={handleInputChange}
-            accept="application/pdf"
-            className="upload-file-input"
-          />
         </div>
-      </div>
 
-      {file && (
-        <div className="file-details">
-          <p className="upload-selected-file">
-            📄 {file.name} ({(file.size / 1024).toFixed(2)} KB)
-          </p>
-          <button
-            type="button"
-            className="remove-file-button"
-            onClick={() => setFile(null)}
-          >
-            Remove
-          </button>
-        </div>
-      )}
+        {/* File Details */}
+        {file && (
+          <div className="file-details">
+            <p className="upload-selected-file">
+              📄 {file.name} ({(file.size / 1024).toFixed(2)} KB)
+            </p>
+            <button
+              type="button"
+              className="remove-file-button"
+              onClick={() => setFile(null)}
+            >
+              Remove
+            </button>
+          </div>
+        )}
 
-      {error && <p className="upload-error-message">⚠ {error}</p>}
+        {/* Error */}
+        {error && <p className="upload-error-message">⚠ {error}</p>}
 
-      <button
-        type="submit"
-        disabled={!file || uploading}
-        className="upload-submit-button"
-      >
-        {uploading ? "⏳ Analyzing..." : "🚀 Analyze Resume"}
-      </button>
+        {/* Submit */}
+        <button
+          type="submit"
+          disabled={!file || uploading}
+          className="upload-submit-button"
+        >
+          {uploading ? "⏳ Analyzing..." : "🚀 Analyze Resume"}
+        </button>
 
-      <p className="upload-form-footer">
-        Supported format: <strong>PDF only</strong>. Max size:{" "}
-        <strong>5MB</strong>.
-      </p>
-    </form>
+        <p className="upload-form-footer">
+          Supported format: <strong>PDF only</strong>. Max size:{" "}
+          <strong>5MB</strong>.
+        </p>
+      </form>
+    </div>
   );
 }
 
