@@ -6,11 +6,13 @@ from dotenv import load_dotenv
 import os
 import json
 import re
+import logging
 
 load_dotenv()
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 model = genai.GenerativeModel("gemini-1.5-flash")
 
+logging.basicConfig(level=logging.INFO)
 
 def extract_text_from_pdf(pdf_path: str) -> str:
     text = ""
@@ -23,98 +25,136 @@ def extract_text_from_pdf(pdf_path: str) -> str:
         if text.strip():
             return text.strip()
     except Exception as e:
-        print(f"Direct text extraction failed: {e}")
+        logging.warning(f"Direct text extraction failed: {e}")
 
-    print("Fallback using OCR for scanned PDF...")
+    logging.info("Fallback using OCR for scanned PDF...")
     try:
-        images = convert_from_path(pdf_path)
-        for img in images:
-            text += pytesseract.image_to_string(img) + "\n"
+        for page_num, img in enumerate(convert_from_path(pdf_path)):
+            page_text = pytesseract.image_to_string(img)
+            if page_text.strip():
+                text += page_text + "\n"
     except Exception as e:
-        print(f"OCR extraction failed: {e}")
+        logging.error(f"OCR extraction failed: {e}")
 
     return text.strip()
 
-
 def clean_json_response(raw_text: str) -> dict:
-    """Clean and parse the JSON response from the AI model"""
-    # Remove markdown code blocks if present
-    if raw_text.startswith("```json"):
-        raw_text = re.sub(r'^```json\s*|\s*```$', '', raw_text, flags=re.MULTILINE)
-    elif raw_text.startswith("```"):
-        raw_text = re.sub(r'^```\s*|\s*```$', '', raw_text, flags=re.MULTILINE)
-    
-    # Try to parse the JSON
     try:
         return json.loads(raw_text)
-    except json.JSONDecodeError as e:
-        print(f"JSON parsing error: {e}")
-        print(f"Raw response: {raw_text}")
-        
-        # Try to extract JSON from malformed response
-        try:
-            # Look for JSON object pattern
-            json_match = re.search(r'\{.*\}', raw_text, re.DOTALL)
-            if json_match:
-                return json.loads(json_match.group())
-        except:
-            pass
-            
-        # Return error if parsing fails
-        return {"error": "Failed to parse analysis results", "raw_response": raw_text[:500] + "..."}
+    except json.JSONDecodeError:
+        match = re.search(r'(\{(?:.|\n)*\})', raw_text)
+        if match:
+            try:
+                return json.loads(match.group(1))
+            except Exception as e:
+                logging.error(f"Nested JSON parsing failed: {e}")
+        return {"error": "Failed to parse JSON", "raw_response": raw_text[:500]}
 
+def enforce_scores(analysis: dict) -> dict:
+    for section, data in analysis.items():
+        if isinstance(data, dict) and "quality_score" in data:
+            if not isinstance(data["quality_score"], int):
+                data["quality_score"] = 0
+            # Ensure 'suggestions' always has content or "No suggestions."
+            # And try to enforce the score consistency if possible post-hoc
+            if "suggestions" in data:
+                if not data["suggestions"].strip() or data["suggestions"].strip() == "No suggestions.":
+                    data["suggestions"] = "No suggestions."
+                    # If no suggestions, score should ideally be 100, or very high if minor unstated nuance
+                    if data["quality_score"] < 90: # Allowing a tiny buffer for edge cases not explicitly suggested
+                        data["quality_score"] = 90 # Set to a high value if no suggestions but not 100 by model
+                elif data["quality_score"] == 100 and data["suggestions"].strip() != "No suggestions.":
+                    # If score is 100 but there are suggestions, this indicates a contradiction.
+                    # This is tricky as we defer to the model, but we can log it.
+                    logging.warning(f"Section '{section}' has score 100 but also suggestions: {data['suggestions']}")
 
-def analyze_resume(resume_text: str) -> dict:
+    if "overall_score" not in analysis:
+        analysis["overall_score"] = 0
+    if "overall_suggestions" not in analysis or not analysis["overall_suggestions"].strip():
+        analysis["overall_suggestions"] = "No overall suggestions."
+    return analysis
+
+def enforce_headshot_rule(analysis: dict) -> dict:
+    if "formatting_issues" in analysis and isinstance(analysis["formatting_issues"], dict):
+        has_headshot = analysis["formatting_issues"].get("has_headshot", False)
+        if has_headshot:
+            analysis["formatting_issues"]["headshot_suggestion"] = (
+                "Remove the headshot; photos are not recommended in professional resumes."
+            )
+        else:
+            analysis["formatting_issues"]["headshot_suggestion"] = "No suggestions regarding headshots."
+    return analysis
+
+def analyze_resume(resume_text: str, retry_on_fail: bool = True) -> dict:
     if not resume_text:
         return {"error": "Empty resume text"}
 
     base_prompt = f"""
-You are an expert resume evaluator capable of analyzing resumes across ALL industries and domains. Your task is to scan the resume text and provide comprehensive feedback. Return ONLY valid JSON in the exact structure below.
-UNIVERSAL ANALYSIS APPROACH:
-Evaluate content based on professional standards applicable to ANY field.
-Score sections based on completeness, clarity, and impact, implicitly considering the candidate's likely career stage (e.g., recent graduate, experienced professional) as inferred from the resume content.
-Provide suggestions that improve the resume for any domain, tailored to the inferred experience level.
-Identify all links mentioned in the resume text and verify their presence accurately.
-SCORING SCALE (0-100%):
-90-100%: Exceptional quality, industry best practices.
-70-89%: Good quality, minor improvements needed.
-50-69%: Average quality, several improvements needed.
-30-49%: Below average, major improvements required.
-0-29%: Poor quality or missing critical elements.
-Phone numbers should be a valid, professionally formatted number. (e.g., +91-XXXXX-XXXXX, (XXX) XXX-XXXX, or XXXXXXXXXX).
-JSON OUTPUT STRUCTURE:
+You are an expert resume evaluator capable of analyzing resumes across ALL industries and domains (tech, healthcare, finance, marketing, engineering, education, legal, etc.). You will receive resume text. Your task is to scan the resume text and provide comprehensive feedback. Return ONLY valid JSON in the exact structure below.
+
+Rules:
+- Extract only resume content into the content fields.
+- Provide analysis separately in quality_score and suggestions.
+- Always return valid JSON in the schema.
+- Do not invent or infer missing details.
+- If a section is missing, leave it empty and flag in suggestions.
+- Do not add commentary, explanations, or markdown.
+- Output MUST start with '{{' and end with '}}'.
+- A professional headshot should NEVER be recommended or suggested. Resumes are not supposed to have headshots.
+- For the 'suggestions' field in each section, if there are no specific improvements needed, explicitly state "No suggestions." Do not leave it empty.
+- **CRITICAL SCORING RULE:** If a section's 'quality_score' is less than 100, there MUST be explicit 'suggestions' provided to explain why. Conversely, if a section's 'suggestions' explicitly state "No suggestions.", then its 'quality_score' MUST be 100, indicating optimal performance for that section.
+- When evaluating 'education', differentiate between degrees (e.g., Bachelor's, Master's) and non-degree education (e.g., high school, junior college). Do not request a 'degree' for non-degree educational entries.
+- Regarding email, only suggest a 'professional email ID' if the current one appears unprofessional or informal (e.g., gamer tags, overly casual names). Do not compel it otherwise.
+
+Scoring:
+The 'overall_score' is a holistic evaluation, not a direct arithmetic average of individual section scores. It considers the weighted importance of each section, the overall impact of the resume, and adherence to best practices. Key sections like work experience and projects will significantly influence the overall score.
+90–100 = Exceptional
+70–89  = Good
+50–69  = Average
+30–49   = Below average
+0–29   = Poor
+
+Schema:
 {{
   "basic_info": {{
+    "content": {{"name": "", "email": "", "phone": "", "location": ""}},
     "quality_score": 0,
-    "suggestions": ""
+    "suggestions": "No suggestions."
   }},
   "professional_summary": {{
+    "content": {{"summary_text": ""}},
     "quality_score": 0,
-    "suggestions": ""
+    "suggestions": "No suggestions."
   }},
   "education": {{
+    "content": {{"institutions": [], "degrees": [], "dates": []}},
     "quality_score": 0,
-    "suggestions": ""
+    "suggestions": "No suggestions."
   }},
   "work_experience": {{
+    "content": {{"companies": [], "positions": [], "durations": [], "achievements": []}},
     "quality_score": 0,
-    "suggestions": ""
+    "suggestions": "No suggestions."
   }},
   "projects": {{
+    "content": {{"project_names": [], "descriptions": []}},
     "quality_score": 0,
-    "suggestions": ""
+    "suggestions": "No suggestions."
   }},
   "skills": {{
+    "content": {{"technical_skills": [], "soft_skills": [], "languages": []}},
     "quality_score": 0,
-    "suggestions": ""
+    "suggestions": "No suggestions."
   }},
   "certifications": {{
+    "content": {{"certification_names": [], "issuing_organizations": [], "dates": []}},
     "quality_score": 0,
-    "suggestions": ""
+    "suggestions": "No suggestions."
   }},
   "extracurriculars": {{
+    "content": {{"activities": [], "roles": [], "durations": []}},
     "quality_score": 0,
-    "suggestions": ""
+    "suggestions": "No suggestions."
   }},
   "links_found": {{
     "linkedin_present": false,
@@ -122,80 +162,40 @@ JSON OUTPUT STRUCTURE:
     "portfolio_website_present": false,
     "other_links_present": false,
     "all_links_list": [],
-    "link_suggestions": ""
+    "link_suggestions": "Include relevant professional links like LinkedIn or a portfolio website if applicable to your industry. A GitHub link is beneficial for technical roles but not universally required. No other suggestions."
   }},
   "formatting_issues": {{
     "has_headshot": false,
-    "headshot_suggestion": "",
-    "other_formatting_issues": ""
+    "headshot_suggestion": "Remove the headshot; photos are not recommended in professional resumes.",
+    "other_formatting_issues": "No suggestions."
   }},
   "overall_score": 0,
-  "overall_suggestions": ""
+  "overall_suggestions": "No overall suggestions."
 }}
-EVALUATION INSTRUCTIONS:
-BASIC INFO ANALYSIS:
-Check for complete contact information (name, email, phone, location if relevant).
-Assess professionalism of email address.
-Score based on completeness and presentation.
-PROFESSIONAL SUMMARY ANALYSIS:
-Evaluate clarity, conciseness, and impact.
-Check if it effectively highlights the candidate's core strengths and career goals, proportional to their inferred experience level.
-Score based on how well it immediately sells the candidate's value.
-EDUCATION ANALYSIS:
-Assess relevance and presentation of educational background.
-Check for appropriate inclusion of GPA, honors, relevant coursework. For recent graduates, this section is more critical; for experienced professionals, it's less so.
-Score based on how education supports the candidate's professional trajectory.
-WORK EXPERIENCE ANALYSIS:
-Look for quantified achievements and impact statements.
-Evaluate use of strong action verbs and professional language.
-Assess career progression, responsibilities, and achievements relative to the candidate's inferred experience level. (e.g., expectations for a senior role are different from a junior role).
-Score based on how well experience demonstrates value and growth.
-PROJECTS ANALYSIS:
-Evaluate project descriptions for clarity and impact.
-Check for clear demonstration of skills and problem-solving abilities.
-Assess outcome and contribution clarity. This section is often more impactful for recent graduates or those with limited professional experience.
-Score based on how projects showcase abilities.
-SKILLS ANALYSIS:
-Evaluate organization and relevance of skills.
-Check for appropriate skill categorization (e.g., Technical, Soft, Languages).
-Assess depth vs. breadth balance appropriate for the candidate's inferred experience level.
-Score based on how well skills are presented and support the candidate's capabilities.
-CERTIFICATIONS ANALYSIS:
-Check relevance to the candidate's likely field.
-Assess credibility and currency of certifications.
-Score based on value addition to candidacy.
-EXTRACURRICULARS ANALYSIS:
-Look for demonstrations of leadership, teamwork, communication, and diverse interests.
-Evaluate relevance to professional development or transferable skills.
-Score based on demonstration of a well-rounded personality and soft skills.
-LINK DETECTION AND VERIFICATION:
-CAREFULLY scan the entire resume text for ANY URLs or web links.
-Look for: linkedin.com, github.com, portfolio sites, personal websites, project demos.
-Mark each type as present (true) or not present (false) in the links_found object.
-List ALL unique and valid links found in "all_links_list".
-For link_suggestions:
-If important professional links (e.g., LinkedIn, GitHub for relevant roles, portfolio for creative roles) are missing, suggest adding them.
-If links are present but formatted poorly (e.g., not clickable, full URL not visible), suggest improvements like ensuring they are clickable and clearly displayed.
-Avoid specific statements like "LinkedIn: Present" within the link_suggestions field; this field is for actionable advice.
-HEADSHOT DETECTION:
-The has_headshot field should always default to false in your output, as headshots are not to be included.
-If you find any mention or placeholder of a photo/headshot within the resume text, in headshot_suggestion, recommend removal for ATS compatibility. Otherwise, leave it empty.
-OVERALL SCORING:
-Calculate weighted average as percentage: Work Experience (35%), Skills (20%), Education (15%), Projects (15%), Professional Summary (10%), Basic Info (3%), Certifications (1%), Extracurriculars (1%).
-OVERALL SUGGESTIONS:
-Provide actionable, domain-neutral suggestions that will improve the resume regardless of industry.
-Tailor suggestions to the inferred experience level of the candidate (e.g., for a recent grad, focus on projects and skills; for experienced, focus on leadership and impact).
 
 Input Resume Text:
 {resume_text}
 """
 
-   
     try:
         response = model.generate_content(base_prompt)
         raw_text = response.text.strip()
         cleaned = clean_json_response(raw_text)
-        return {"status": "success", "analysis": cleaned}
+
+        # Retry if failed
+        if "error" in cleaned and retry_on_fail:
+            logging.warning("Retrying with stricter JSON-only prompt...")
+            retry_prompt = (
+                "Return ONLY valid JSON, no text outside. "
+                "Do not include markdown. Resume follows:\n" + resume_text
+            )
+            retry_response = model.generate_content(retry_prompt)
+            cleaned = clean_json_response(retry_response.text.strip())
+
+        return {
+            "status": "success",
+            "analysis": enforce_headshot_rule(enforce_scores(cleaned))
+        }
     except Exception as e:
-        print(f"Error in AI analysis: {e}")
+        logging.error(f"Error in AI analysis: {e}")
         return {"error": f"Analysis failed: {str(e)}"}
