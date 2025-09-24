@@ -1,11 +1,11 @@
 {
   "name": "resume-scanner-v1",
-  "version": "1.0.0",
-  "description": "VU Resume Analyzer - AI-powered resume analysis tool",
+  "version": "1.2.0",
+  "description": "VU Resume Analyzer - AI-powered resume analysis tool with bulk processing and export capabilities",
   "scripts": {
-    "build": "cd ai-resume-frontend && npm install && npm run build",
-    "dev": "cd ai-resume-frontend && npm run dev",
-    "preview": "cd ai-resume-frontend && npm run preview"
+    "build": "cd frontend && npm install && npm run build",
+    "dev": "cd frontend && npm run dev",
+    "preview": "cd frontend && npm run preview"
   },
   "repository": {
     "type": "git",

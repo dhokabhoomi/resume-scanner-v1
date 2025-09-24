@@ -3,22 +3,40 @@ __pycache__/
 *.py[cod]
 *.pyo
 *.pyd
-
-# Virtual environments
 venv/
 .env/
 .venv/
-
-# Environment variables
 .env
 
 # Logs
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+resume_analyzer_errors.log*
+resume_analyzer.log*
 
 # macOS
 .DS_Store
 
 # IDE/project files
 .vscode/
+!.vscode/extensions.json
 .idea/
 *.swp
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/*.local
+frontend/.env
+
+# Cache
+cache/
