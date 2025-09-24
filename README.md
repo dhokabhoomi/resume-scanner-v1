@@ -133,6 +133,50 @@ npm run dev
 
 ---
 
+## 🚀 Deployment
+
+### Backend Deployment (Render)
+
+The backend is configured to deploy on Render using the included `render.yaml` configuration.
+
+1. **Connect Repository to Render**:
+   - Go to [Render Dashboard](https://dashboard.render.com)
+   - Connect your GitHub repository
+   - Choose "Web Service" deployment
+
+2. **Environment Variables**:
+   Set these environment variables in Render dashboard:
+   ```
+   GOOGLE_API_KEY=your_google_ai_api_key
+   ENVIRONMENT=production
+   ```
+
+3. **Automatic Deployment**:
+   - Render will automatically use the `render.yaml` configuration
+   - Backend will be deployed at: `https://resume-analyzer-api.onrender.com`
+   - Health check endpoint: `/health`
+
+### Frontend Deployment (Vercel)
+
+The frontend is configured for Vercel deployment with automatic backend API integration.
+
+1. **Connect Repository to Vercel**:
+   - Go to [Vercel Dashboard](https://vercel.com/dashboard)
+   - Import your GitHub repository
+   - Vercel will auto-detect the configuration from `vercel.json`
+
+2. **Automatic Configuration**:
+   - Frontend builds from `/frontend` directory
+   - API URL automatically configured to use Render backend
+   - Deployed at: `https://your-project.vercel.app`
+
+### Environment Variables
+
+- **Backend (Render)**: Set `GOOGLE_API_KEY` in Render dashboard environment variables
+- **Frontend (Vercel)**: `VITE_API_URL` is pre-configured in `vercel.json`
+
+---
+
 ## 🎨 Customization
 
 - Styles can be updated in `.css` files (e.g., `UploadResumeForm.css`).

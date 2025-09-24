@@ -2,10 +2,25 @@ services:
   - type: web
     name: resume-analyzer-api
     env: python
-    buildCommand: "pip install -r requirements.txt"
-    startCommand: "uvicorn main:app --host 0.0.0.0 --port $PORT"
+    region: oregon
+    plan: starter
+    buildCommand: "./backend/render-build.sh"
+    startCommand: "cd backend && python app.py"
+    healthCheckPath: "/health"
     envVars:
       - key: PYTHON_VERSION
-        value: "3.11"
+        value: "3.13"
       - key: GOOGLE_API_KEY
-        value: "AIzaSyBo6wCD9rcSZEryIsWXw5X7ShYQ8BIsQnA"
+        fromGroup: secrets
+      - key: ENVIRONMENT
+        value: "production"
+      - key: HOST
+        value: "0.0.0.0"
+      - key: PORT
+        value: "8000"
+      - key: RELOAD
+        value: "false"
+      - key: LOG_LEVEL
+        value: "INFO"
+      - key: FRONTEND_URL
+        value: "https://resume-analyzer-frontend.vercel.app"

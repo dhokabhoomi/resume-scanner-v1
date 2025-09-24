@@ -3,6 +3,9 @@
   "outputDirectory": "frontend/dist",
   "installCommand": "cd frontend && npm install",
   "devCommand": "cd frontend && npm run dev",
+  "env": {
+    "VITE_API_URL": "https://resume-analyzer-api.onrender.com"
+  },
   "rewrites": [
     {
       "source": "/(.*)",
@@ -20,6 +23,10 @@
         {
           "key": "X-Content-Type-Options",
           "value": "nosniff"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
         }
       ]
     }

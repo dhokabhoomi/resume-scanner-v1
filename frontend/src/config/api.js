@@ -10,9 +10,8 @@ const getApiUrl = () => {
     return 'http://localhost:8000';
   }
   
-  // For production (Vercel deployment)
-  // Replace this with your actual backend API URL
-  return 'https://your-backend-api-url.com';
+  // For production (Vercel deployment) - Render backend
+  return 'https://resume-analyzer-api.onrender.com';
 };
 
 export const API_BASE_URL = getApiUrl();
