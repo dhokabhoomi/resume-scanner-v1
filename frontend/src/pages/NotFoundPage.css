@@ -1,0 +1,165 @@
+.not-found-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  padding: 2rem;
+}
+
+.not-found-container {
+  max-width: 600px;
+  text-align: center;
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  padding: 3rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.not-found-icon {
+  font-size: 4rem;
+  margin-bottom: 1.5rem;
+}
+
+.not-found-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: var(--accent-primary);
+}
+
+.not-found-message {
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+  color: var(--text-secondary);
+}
+
+.not-found-message code {
+  background: var(--bg-tertiary);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  color: var(--accent-primary);
+}
+
+.not-found-suggestion {
+  font-size: 1rem;
+  margin-bottom: 2rem;
+  color: var(--text-secondary);
+}
+
+.not-found-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 2rem;
+}
+
+.btn-primary, .btn-secondary, .btn-tertiary {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-primary {
+  background: var(--accent-primary);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: var(--accent-secondary);
+  transform: translateY(-2px);
+}
+
+.btn-secondary {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 2px solid var(--border-color);
+}
+
+.btn-secondary:hover {
+  background: var(--accent-primary);
+  color: white;
+  border-color: var(--accent-primary);
+}
+
+.btn-tertiary {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
+
+.btn-tertiary:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.not-found-links {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.not-found-links h3 {
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+  color: var(--text-primary);
+}
+
+.not-found-links ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.not-found-links li {
+  margin-bottom: 0.5rem;
+}
+
+.link-button {
+  background: none;
+  border: none;
+  color: var(--accent-primary);
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0.25rem 0;
+  transition: color 0.3s ease;
+}
+
+.link-button:hover {
+  color: var(--accent-secondary);
+}
+
+/* These styles use global CSS variables defined in App.css for the professional theme */
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .not-found-container {
+    padding: 2rem;
+    margin: 1rem;
+  }
+
+  .not-found-title {
+    font-size: 2rem;
+  }
+
+  .not-found-actions {
+    flex-direction: column;
+  }
+
+  .btn-primary, .btn-secondary, .btn-tertiary {
+    width: 100%;
+    justify-content: center;
+  }
+}
